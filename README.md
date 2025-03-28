@@ -1,1 +1,1 @@
-Every program is for learning purpose
+Scripts just for learning and curiosity purposes
