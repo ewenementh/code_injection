@@ -9,8 +9,6 @@
 #include <string.h>
 
 #define AES_BLOCK_SIZE 16
-#define INITIAL_HASH 0xABCD1234  // Początkowy wektor
-#define MIX_CONSTANT 0x9E3779B9  // Stała mieszająca
 
 typedef BOOL (*pWriteProcessMemory)(HANDLE, LPVOID, LPCVOID, SIZE_T, SIZE_T);
 
