@@ -5,6 +5,10 @@
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
 #define STATUS_INFO_LENGTH_MISMATCH      ((NTSTATUS)0xC0000004L)
 
+#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
+#define STATUS_INFO_LENGTH_MISMATCH      ((NTSTATUS)0xC0000004L)
+#define SYSCALL(syscall_number) __asm { mov eax, syscall_number } __asm { syscall }
+
 
 struct IMAGE_DOS_HEADER {      // DOS .EXE header
     WORD   e_magic;                     // Magic number
@@ -112,7 +116,7 @@ struct IMAGE_EXPORT_DIRECTORY {
     DWORD AddressOfNameOrdinals;
 };
 
-typedef PVOID (NTAPI *pRtlAllocateHeap)(PVOID HeapHandle, ULONG Flags, SIZE_T Size);
+typedef PVOID (NTAPI *pRtlAllocateHeap)(PVOID HeapHandle, ULONG Flags, SIZE_T Size);//0xF3EBA2EB, 
 
 typedef struct _PS_ATTRIBUTE
 {
@@ -155,7 +159,7 @@ typedef struct _PS_ATTRIBUTE_LIST
     PS_ATTRIBUTE Attributes[1];
 } PS_ATTRIBUTE_LIST, * PPS_ATTRIBUTE_LIST;
 
-typedef NTSTATUS (NTAPI *pNtCreateSection)(
+typedef NTSTATUS (NTAPI *pNtCreateSection)(//0x999068C5, pNtCreateSection
   OUT PHANDLE SectionHandle,
   IN ULONG DesiredAccess,
   IN POBJECT_ATTRIBUTES ObjectAttributes OPTIONAL,
@@ -181,6 +185,27 @@ typedef NTSTATUS (NTAPI *pNtMapViewOfSection)(
   IN ULONG                Protect 
 );
 
+typedef NTSTATUS (NTAPI *pNtMapViewOfSection)(
+  HANDLE, HANDLE, PVOID*, ULONG, ULONG, PLARGE_INTEGER, PULONG, DWORD, ULONG, ULONG
+);
+
+/*
+typedef NTSTATUS (NTAPI* pNtCreateThreadEx)(
+    OUT PHANDLE ThreadHandle,
+    IN ACCESS_MASK DesiredAccess,
+    IN POBJECT_ATTRIBUTES ObjectAttributes OPTIONAL,
+    IN HANDLE ProcessHandle,
+    IN PVOID StartRoutine,
+    IN PVOID Argument OPTIONAL,
+    IN ULONG CreateFlags,
+    IN SIZE_T ZeroBits,
+    IN SIZE_T StackSize,
+    IN SIZE_T MaximumStackSize,
+    IN PPS_ATTRIBUTE_LIST AttributeList OPTIONAL
+  );
+*/
+
+
 typedef struct _UNICODE_STRING
 {
     USHORT Length;
@@ -188,14 +213,14 @@ typedef struct _UNICODE_STRING
     PWSTR  Buffer;
 } UNICODE_STRING, * PUNICODE_STRING;
 
-  typedef NTSYSAPI NTSTATUS(NTAPI* _NtProtectVirtualMemory)(
-    HANDLE ProcessHandle,
-    PVOID *BaseAddress,
-    PSIZE_T RegionSize,
-    ULONG NewProtect,
-    PULONG OldProtect);
-
-  typedef NTSTATUS (NTAPI* _NtCreateThreadEx)(
+typedef NTSYSAPI NTSTATUS(NTAPI* _NtProtectVirtualMemory)(//0xFE5E8CCF,_NtProtectVirtualMemory
+  HANDLE ProcessHandle,
+  PVOID *BaseAddress,
+  PSIZE_T RegionSize,
+  ULONG NewProtect,
+  PULONG OldProtect);
+/*
+  typedef NTSTATUS (NTAPI* _NtCreateThreadEx)(//0x2E8BB13D, _NtCreateThreadEx
     OUT PHANDLE ThreadHandle,
     IN ACCESS_MASK DesiredAccess,
     IN POBJECT_ATTRIBUTES ObjectAttributes OPTIONAL,
@@ -207,9 +232,37 @@ typedef struct _UNICODE_STRING
     IN SIZE_T StackSize,
     IN SIZE_T MaximumStackSize,
     IN PPS_ATTRIBUTE_LIST AttributeList OPTIONAL);
+*/
+typedef NTSTATUS (NTAPI* _NtCreateThreadEx)(//0x2E8BB13D, _NtCreateThreadEx
+    OUT PHANDLE ThreadHandle,
+    IN ACCESS_MASK DesiredAccess,
+    IN POBJECT_ATTRIBUTES ObjectAttributes,
+    IN HANDLE ProcessHandle,
+    IN LPTHREAD_START_ROUTINE StartRoutine,
+    IN PVOID Argument,
+    IN ULONG CreateFlags, // THREAD_CREATE_FLAGS_*
+    IN SIZE_T ZeroBits,
+    IN SIZE_T StackSize,
+    IN SIZE_T MaximumStackSize,
+    IN PPS_ATTRIBUTE_LIST AttributeList OPTIONAL);
+    
   typedef enum _SECTION_INHERIT {
     ViewShare = 1,
     ViewUnmap = 2
 } SECTION_INHERIT;
 
-typedef PVOID (NTAPI *RtlAllocateHeap_t)(PVOID, ULONG, SIZE_T);
+typedef PVOID (NTAPI *pRtlAllocateHeap)(PVOID, ULONG, SIZE_T);
+
+typedef NTSTATUS (NTAPI *pNtWriteVirtualMemory)(
+  HANDLE ProcessHandle,
+  PVOID BaseAddress,
+  PVOID Buffer,
+  ULONG NumberOfBytesToWrite,
+  PULONG NumberOfBytesWritten OPTIONAL
+);
+
+typedef NTSTATUS (NTAPI *pNtWaitForSingleObject)(
+  HANDLE Handle,
+  BOOLEAN Alertable,
+  PLARGE_INTEGER Timeout
+);
